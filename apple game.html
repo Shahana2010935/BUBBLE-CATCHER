@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Apple Catching Game</title>
+  <style>
+    body {
+      margin: 0;
+      background: lightblue;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #gameCanvas {
+      background: #87CEEB;
+      display: none;
+      margin: auto;
+      border: 2px solid #333;
+    }
+    #startScreen, #gameOverScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>🍎 Apple Catching Game 🍎</h1>
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="500"></canvas>
+
+<div id="gameOverScreen" style="display:none;">
+  <h1>Game Over!</h1>
+  <h2 id="finalScore"></h2>
+  <button onclick="restartGame()">Play Again</button>
+</div>
+
+<script>
+let canvas = document.getElementById("gameCanvas");
+let ctx = canvas.getContext("2d");
+
+let gameRunning = false;
+let score = 0;
+let misses = 0;
+let basket;
+let apples;
+let keys = {};
+
+document.addEventListener("keydown", (e) => keys[e.key] = true);
+document.addEventListener("keyup", (e) => keys[e.key] = false);
+
+function startGame() {
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('gameOverScreen').style.display = 'none';
+  document.getElementById('gameCanvas').style.display = 'block';
+  
+  score = 0;
+  misses = 0;
+  basket = { x: 160, y: 450, width: 80, height: 20 };
+  apples = [];
+  gameRunning = true;
+  
+  gameLoop();
+}
+
+function gameOver() {
+  gameRunning = false;
+  document.getElementById('finalScore').innerText = `Score: ${score}`;
+  document.getElementById('gameOverScreen').style.display = 'flex';
+}
+
+function restartGame() {
+  startGame();
+}
+
+function spawnApple() {
+  apples.push({
+    x: Math.random() * (canvas.width - 20) + 10,
+    y: -20,
+    radius: 10,
+    speed: 2 + Math.random() * 2
+  });
+}
+
+function update() {
+  // Move basket
+  if (keys["ArrowLeft"] && basket.x > 0) basket.x -= 5;
+  if (keys["ArrowRight"] && basket.x < canvas.width - basket.width) basket.x += 5;
+
+  // Move apples
+  for (let i = apples.length - 1; i >= 0; i--) {
+    apples[i].y += apples[i].speed;
+    
+    // Check catch
+    if (
+      apples[i].y + apples[i].radius >= basket.y &&
+      apples[i].x >= basket.x &&
+      apples[i].x <= basket.x + basket.width
+    ) {
+      apples.splice(i, 1);
+      score++;
+      continue;
+    }
+    
+    // Missed apple
+    if (apples[i].y > canvas.height) {
+      apples.splice(i, 1);
+      misses++;
+      if (misses >= 3) gameOver();
+    }
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Basket
+  ctx.fillStyle = "brown";
+  ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+  
+  // Apples
+  ctx.fillStyle = "red";
+  for (let apple of apples) {
+    ctx.beginPath();
+    ctx.arc(apple.x, apple.y, apple.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  
+  // Score
+  ctx.fillStyle = "black";
+  ctx.font = "16px Arial";
+  ctx.fillText(`Score: ${score}  Misses: ${misses}`, 10, 20);
+}
+
+function gameLoop() {
+  if (!gameRunning) return;
+  
+  if (Math.random() < 0.02) spawnApple(); // Spawn apples randomly
+  
+  update();
+  draw();
+  
+  requestAnimationFrame(gameLoop);
+}
+</script>
+
+</body>
+</html>
